@@ -10,19 +10,23 @@ Die folgende Anleitung besteht aus zwei Teilen: Im ersten Teil wird ein vollstä
 
 1. Im Folgenden wird als Grundlage das Aufsetzten einer lokalen Annif-Installation beschrieben. Falls eine dauerhafte Server-Lösung gewünscht ist, sollte Annif als WSGI-Service installiert werden, was zusätzliche Schritte erfordert. Eine Anleitung dazu findet sich [hier](https://github.com/NatLibFi/Annif/wiki/Running-as-a-WSGI-service), die folgende grundlegende Vorgehensweise sind aber bei beiden Wegen identisch.
 
-Verwendet werden im Folgenden Annif v0.58 und Python 3.8.
-
+Verwendet werden im Folgenden 
+- Annif v0.58
+- Python 3.8 (bzw. <3.12)
+- nltk 3.8.1 
 ```
 git clone --branch v0.58.0 https://github.com/NatLibFi/Annif.git
 cd Annif
 python3.8 -m venv venv (kann anders lauten je nach vorhandener Python-Binary)
 . venv/bin/activate
 pip install pip setuptools --upgrade
+pip install annif
 python -m nltk.downloader punkt
 pip install .[fasttext]
 pip install .[omikuji]
 pip install .[nn]
 ```
+Wenn Annif nicht von GitHub installiert wurde, muss `pip install annif[fasttext]` etc. verwendet werden.
 
 2. Anschließend sollten einige Dateien aus diesem Repository in die Annif-Installation kopiert werden, im Einzelnen sind dies die Projekt-Konfigurationsdatei, der Trainings- und der Testkorpus sowie das NWBib-SKOS-Vokabular. Die letzteren platzieren wir zwecks Übersicht in einem neuen Ordner `nwbib-data`:
 
@@ -44,7 +48,7 @@ annif list-projects
 Bevor wir mit dem Trainieren beginnen, muss noch einmalig das NWBib-Vokabular geladen werden. Dies geschieht mittels
 
 ```
-annif loadvoc nwbib-tfidf nwbib-data/nwbib.ttl
+annif load-vocab nwbib-de nwbib-data/nwbib.ttl
 ```
 
 4. Jetzt können wir Annif anweisen, die einzelnen Backends zu trainieren, indem wir ihm den Trainingskorpus übergeben. Wir beginnen mit dem einfachsten Backend, das die TF-IDF-Heuristik implementiert:
