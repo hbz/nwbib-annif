@@ -94,16 +94,8 @@ curl --header "Accept-Encoding: gzip" "http://lobid.org/resources/search?q=inCol
 gunzip nwbib.gz
 ```
 
-2. Chunk-Skript ausführen, um die Datei in kleinere Bestandteile aufzuspalten (vermeidet Speicherprobleme bei der späteren Verarbeitung mit Python):
-
-```
-python nwbib_chunker.py
-```
-
-3. Extraktor-Skript ausführen, um die Korpora zu erzeugen. Das Skript kann mit zusätzlichen Argumenten aufgerufen werden, `-h` zeigt eine Übersicht. Falls keine weiteren Einstellungen zur Korpusgröße angegeben werden, werden Trainings- und Testkorpus mit einer randomisierten 90:10-Partitionierung erstellt, dies ist die Datengrundlage, die auch im Fachaufsatz beschrieben wird. Zusätzlich sollte allerdings das SKOS-Vokabular der NWBib über den Parameter `-v` angeben werden, damit fehlerhafte Terme ausgefiltert werden können.
+2. Extraktor-Skript ausführen, um die Korpora zu erzeugen. Das Skript kann mit zusätzlichen Argumenten aufgerufen werden, `-h` zeigt eine Übersicht. Falls keine weiteren Einstellungen zur Korpusgröße angegeben werden, werden Trainings- und Testkorpus mit einer randomisierten 90:10-Partitionierung erstellt, dies ist die Datengrundlage, die auch im Fachaufsatz beschrieben wird. Zusätzlich sollte allerdings das SKOS-Vokabular der NWBib über den Parameter `-v` angeben werden, damit fehlerhafte Terme ausgefiltert werden können.
 
 ```
 python nwbib_extractor.py -v nwbib.ttl
 ```
-
-
