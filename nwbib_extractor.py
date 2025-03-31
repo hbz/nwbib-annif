@@ -3,12 +3,12 @@ import csv
 import json
 from random import shuffle
 import re
-from os.path import join, splitext
-from os import listdir
 import sys
 
+# curl --header "Accept-Encoding: gzip" "http://lobid.org/resources/search?q=inCollection.id%3A%22http%3A%2F%2Flobid.org%2Fresources%2FHT014176012%23%21%22&format=jsonl" > nwbib.gz
+# gunzip it (file name "nwbib")
 
-CHUNK_DIR = "chunks"
+NWBIB_FILE = "nwbib"
 TARGET_TRAIN_FILE = "nwbib_subjects_train.tsv"
 TARGET_TEST_FILE = "nwbib_subjects_test.tsv"
 TARGET_NO_SUBJECTS_FILE = "nwbib_unindexed_titles.txt"
@@ -35,24 +35,38 @@ def extract_data(record):
     ret = {
         'title': '',
         'otherTitleInformation': '',
-        'subjects': []
+        'subjects': [],
+        'language': [],
+        'otherSubjects': [],
+        'abstract': ''
     }
-    ret['title'] = record.get('title', '')
-    if 'otherTitleInformation' in record:
-        ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
-    subjects = record.get('subject', [])
-    for subject_dict in subjects:
-        source_id = subject_dict.get("id", '')
-        if source_id.startswith("https://nwbib.de/subjects"):
-            label = subject_dict.get("label", '')
-            if SKOS_VOCAB_TERMS is None:
-                ret["subjects"].append((source_id, label))
-            else:
-                if source_id in SKOS_VOCAB_TERMS:
-                    ret["subjects"].append((source_id, label))
-                else:
-                    msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
-                    print(msg.format(source_id, label))
+    lang_ids = ["http://id.loc.gov/vocabulary/iso639-2/ger", "http://id.loc.gov/vocabulary/iso639-2/eng"]
+    if record.get("language") is not None:
+        for rec_lang in record.get("language"):
+            lang_id = rec_lang.get("id")
+            if lang_id in lang_ids:
+                ret["language"] = record.get('language', [])
+                ret['title'] = record.get('title', '')
+                if 'otherTitleInformation' in record:
+                    ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
+                if "abstract" in record:
+                    ret['abstract'] = "".join(record["abstract"])
+                subjects = record.get('subject', [])
+                for subject_dict in subjects:
+                    source_id = subject_dict.get("id", '')
+                    label = subject_dict.get("label", '')
+                    if source_id.startswith("https://nwbib.de/subjects"):
+                        if SKOS_VOCAB_TERMS is None:
+                            ret["subjects"].append((source_id, label))
+                        else:
+                            if source_id in SKOS_VOCAB_TERMS:
+                                ret["subjects"].append((source_id, label))
+                            else:
+                                msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
+                                print(msg.format(source_id, label))
+                    else:
+                        ret["otherSubjects"].append(label)
+
     return ret
 
 def _extract_voc_terms(voc_file_path):
@@ -67,7 +81,10 @@ def _extract_voc_terms(voc_file_path):
                 SKOS_VOCAB_TERMS.append(term)
 
 def _prepare_tsv_data(record):
-    combined_title = record["title"] if not record["otherTitleInformation"] else record["title"] + " - " + record["otherTitleInformation"]
+    #combined_title = record["title"] if not record["otherTitleInformation"] else record["title"] + " - " + record["otherTitleInformation"]
+    comb_title = {k: v for k, v in record.items() if v}
+    del comb_title["subjects"], comb_title["language"]
+    combined_title = ' '.join(str(v) for k, v in comb_title.items())
     subjects = ["<" + subject_tup[0] + ">" for subject_tup in record["subjects"]]
     line = [combined_title] + subjects
     return line
@@ -86,6 +103,16 @@ def _print_stats(stats):
     for k, v in sorted(subjects_dist[:100], key=lambda x: x[1], reverse=True):
         print("{}: {}".format(k, v))
     print("\n\n")
+
+def filter_language(record):
+    lang_ids = []
+    if record.get("language") is not None:
+        for rec_lang in record.get("language"):
+            lang_id = rec_lang.get("id")
+            lang_ids.append(lang_id)
+            lang_id_list = "".join(lang_ids)
+            if "http://id.loc.gov/vocabulary/iso639-2/ger" in lang_id_list or "http://id.loc.gov/vocabulary/iso639-2/eng" in lang_id_list:
+                return True
 
 def main():
     parser = argparse.ArgumentParser()
@@ -116,18 +143,16 @@ def main():
     valid_records = []
     records_without_subjects = []
 
-    for filename in listdir(CHUNK_DIR):
-        path = join(CHUNK_DIR, filename)
-        with open(path) as f:
-            content = f.read()
+    with open(NWBIB_FILE) as input_file:
+        for line in input_file:
             try:
-                json_dicts = json.loads(content)
+                json_dict = json.loads(line)
             except json.decoder.JSONDecodeError as jsond:
-                print("Could not read from file {}: {}".format(path, jsond))
+                print("Could not read from file {}: {}".format(line, jsond))
                 continue
-            for record in json_dicts:
-                data = extract_data(record)
-                if data["subjects"]:
+            data = extract_data(json_dict)
+            if data is not None:
+                if data["subjects"] and filter_language(data):
                     valid_records.append(data)
                 else:
                     records_without_subjects.append(data)
@@ -136,7 +161,7 @@ def main():
                     print(str(stats["total_records"]) + " records processed")
                 if args.stats:
                     # collect statistical data
-                    for key in record.keys():
+                    for key in json_dict.keys():
                         if key not in stats["record_keys_distribution"]:
                             stats["record_keys_distribution"][key] = 1
                         else:
