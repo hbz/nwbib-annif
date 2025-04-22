@@ -1,0 +1,28 @@
+services:
+
+  annif_app:
+    image: quay.io/natlibfi/annif:latest
+    volumes:
+      - ${ANNIF_PROJECTS}:/annif-projects
+    user: ${MY_UID}:${MY_GID}
+    command: ["gunicorn", "annif:create_app()", "--bind", "0.0.0.0:8000", "--timeout", "600"]
+
+  nginx:
+    image: nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      - annif_app
+    command: |
+      bash -c 'bash -s <<EOF
+        cat > /etc/nginx/conf.d/default.conf <<EON
+          server {
+              listen 80;
+              server_name localhost;
+              location / {
+                  proxy_pass http://annif_app:8000;
+              }
+          }
+      EON
+      nginx -g "daemon off;";
+      EOF'
