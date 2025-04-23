@@ -12,24 +12,40 @@ Die folgende Anleitung besteht aus zwei Teilen: Im ersten Teil wird ein vollstä
 
 ##### Variante A mit Docker (genutzt im hbz)
 
-Verwendet wir im Folgenden: 
+Verwendet wird im Folgenden Docker Engine und Docker Compose unter Linux:
 
-- Docker
+- [Installiere Docker Engine](https://docs.docker.com/engine/install/).
+
+- [Installiere Docker Compose](https://docs.docker.com/compose/install/linux/#install-using-the-repository) als Plugin.
+
+Um die folgenden `docker`-Kommandos ohne root-Rechte ausführen zu können, muss der Nutzer zur `docker`-Gruppe hinzugefügt werden, siehe https://docs.docker.com/engine/install/linux-postinstall/
+
+Alternativ kann man [Docker Desktop](https://docs.docker.com/desktop/) verwenden, insbesondere unter Windows.
 ...
 
-1. Auf Basis der `docker-compose.yml` wird ein Container gebaut
+1. Auf Basis der `docker-compose.yml` wird aus dem [offiziellen Docker Image](https://quay.io/repository/natlibfi/annif?tab=tags&tag=latest) der Finnischen Nationalbibliothek ein Container im Hintergrund gestartet
 
-`docker compose up` - ggf. als root mit sudo
+`docker compose up --detach`
 
+2. Prüfen, ob Docker Container läuft und den Namen Containers ermitteln:
 
-2. Wechsel in den Container:
+`docker ps`
 
-`sudo docker exec -it nwbib-annif-annif_app-1 bash`
+3. Annif-Projekte auflisten:
 
-3. Prüfen, ob Docker läuft:
+Entweder 
+
+`docker exec [Name des Containers] annif list-projects`
+
+oder zuerst in den Container wechseln
+
+`docker exec -it [Name des Containers] bash`
+
+und im Container 
 
 `annif list-projects`
 
+Aus dem Container zurück auf den Host mit `exit`.
 
 ##### Variante B mit lokaler Annif-Installation
 
