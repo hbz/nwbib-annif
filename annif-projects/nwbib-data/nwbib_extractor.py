@@ -67,7 +67,7 @@ def extract_data(record):
                     else:
                         ret["otherSubjects"].append(label)
 
-    return ret
+        return ret
 
 def _extract_voc_terms(voc_file_path):
     global SKOS_VOCAB_TERMS
