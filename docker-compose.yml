@@ -2,6 +2,7 @@ services:
 
   annif_app:
     image: quay.io/natlibfi/annif:latest
+    restart: always
     volumes:
       - ${ANNIF_PROJECTS}:/annif-projects
     user: ${MY_UID}:${MY_GID}
@@ -9,6 +10,7 @@ services:
 
   nginx:
     image: nginx
+    restart: always
     ports:
       - "8080:80"
     depends_on:
