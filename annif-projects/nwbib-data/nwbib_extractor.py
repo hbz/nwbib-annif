@@ -40,34 +40,29 @@ def extract_data(record):
         'otherSubjects': [],
         'abstract': ''
     }
-    lang_ids = ["http://id.loc.gov/vocabulary/iso639-2/ger", "http://id.loc.gov/vocabulary/iso639-2/eng"]
-    if record.get("language") is not None:
-        for rec_lang in record.get("language"):
-            lang_id = rec_lang.get("id")
-            if lang_id in lang_ids:
-                ret["language"] = record.get('language', [])
-                ret['title'] = record.get('title', '')
-                if 'otherTitleInformation' in record:
-                    ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
-                if "abstract" in record:
-                    ret['abstract'] = "".join(record["abstract"])
-                subjects = record.get('subject', [])
-                for subject_dict in subjects:
-                    source_id = subject_dict.get("id", '')
-                    label = subject_dict.get("label", '')
-                    if source_id.startswith("https://nwbib.de/subjects"):
-                        if SKOS_VOCAB_TERMS is None:
-                            ret["subjects"].append((source_id, label))
-                        else:
-                            if source_id in SKOS_VOCAB_TERMS:
-                                ret["subjects"].append((source_id, label))
-                            else:
-                                msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
-                                print(msg.format(source_id, label))
-                    else:
-                        ret["otherSubjects"].append(label)
+    ret["language"] = record.get('language', [])
+    ret['title'] = record.get('title', '')
+    if 'otherTitleInformation' in record:
+        ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
+    if "abstract" in record:
+        ret['abstract'] = "".join(record["abstract"])
+    subjects = record.get('subject', [])
+    for subject_dict in subjects:
+        source_id = subject_dict.get("id", '')
+        label = subject_dict.get("label", '')
+        if source_id.startswith("https://nwbib.de/subjects"):
+            if SKOS_VOCAB_TERMS is None:
+                ret["subjects"].append((source_id, label))
+            else:
+                if source_id in SKOS_VOCAB_TERMS:
+                    ret["subjects"].append((source_id, label))
+                else:
+                    msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
+                    print(msg.format(source_id, label))
+        else:
+            ret["otherSubjects"].append(label)
 
-        return ret
+    return ret
 
 def _extract_voc_terms(voc_file_path):
     global SKOS_VOCAB_TERMS
@@ -81,7 +76,7 @@ def _extract_voc_terms(voc_file_path):
                 SKOS_VOCAB_TERMS.append(term)
 
 def _prepare_tsv_data(record):
-    #combined_title = record["title"] if not record["otherTitleInformation"] else record["title"] + " - " + record["otherTitleInformation"]
+
     comb_title = {k: v for k, v in record.items() if v}
     del comb_title["subjects"], comb_title["language"]
     combined_title = ' '.join(str(v) for k, v in comb_title.items())
@@ -143,7 +138,7 @@ def main():
     valid_records = []
     records_without_subjects = []
 
-    with open(NWBIB_FILE) as input_file:
+    with open(NWBIB_FILE, encoding="utf-8") as input_file:
         for line in input_file:
             try:
                 json_dict = json.loads(line)
@@ -151,8 +146,8 @@ def main():
                 print("Could not read from file {}: {}".format(line, jsond))
                 continue
             data = extract_data(json_dict)
-            if data is not None:
-                if data["subjects"] and filter_language(data):
+            if data is not None and filter_language(data):
+                if data["subjects"]:
                     valid_records.append(data)
                 else:
                     records_without_subjects.append(data)
@@ -215,18 +210,19 @@ def main():
         else:
             training_records.append(valid_records[i])
 
-    with open(TARGET_TRAIN_FILE, "w") as ttf:
+    with open(TARGET_TRAIN_FILE, "w", encoding="utf-8", newline='') as ttf:
         writer = csv.writer(ttf, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for record in training_records:
             writer.writerow(_prepare_tsv_data(record))
-    with open(TARGET_TEST_FILE, "w") as ttf:
+    with open(TARGET_TEST_FILE, "w", encoding="utf-8", newline='') as ttf:
         writer = csv.writer(ttf, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for record in test_records:
             writer.writerow(_prepare_tsv_data(record))
-    with open(TARGET_NO_SUBJECTS_FILE, "w") as tnsf:
+    with open(TARGET_NO_SUBJECTS_FILE, "w", encoding="utf-8") as tnsf:
         for record in records_without_subjects:
             combined_title = record["title"] if not record["otherTitleInformation"] else record["title"] + " - " + record["otherTitleInformation"]
             tnsf.write(combined_title + "\n")
+
 
 if __name__ == '__main__':
     main()
