@@ -31,6 +31,8 @@ ARGS_HELP_STRINGS = {
                                  "at random.")
 }
 
+# Create smaller records for the training by defining a subset of only certain properties.
+
 def extract_data(record):
     ret = {
         'title': '',
@@ -46,6 +48,7 @@ def extract_data(record):
         ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
     if "abstract" in record:
         ret['abstract'] = "".join(record["abstract"])
+    # Separate nwbib subjects from other subjects, other subjects are stored for training data
     subjects = record.get('subject', [])
     for subject_dict in subjects:
         source_id = subject_dict.get("id", '')
@@ -64,6 +67,8 @@ def extract_data(record):
 
     return ret
 
+# TODO: Add documentation.
+
 def _extract_voc_terms(voc_file_path):
     global SKOS_VOCAB_TERMS
     term_id_pattern = re.compile("^:(?P<term_id>N[0-9]+)$")
@@ -75,6 +80,8 @@ def _extract_voc_terms(voc_file_path):
                 term = "https://nwbib.de/subjects#" + match.group("term_id")
                 SKOS_VOCAB_TERMS.append(term)
 
+# Configure elements of records for text string as the trainings data basis
+
 def _prepare_tsv_data(record):
 
     comb_title = {k: v for k, v in record.items() if v}
@@ -83,6 +90,12 @@ def _prepare_tsv_data(record):
     subjects = ["<" + subject_tup[0] + ">" for subject_tup in record["subjects"]]
     line = [combined_title] + subjects
     return line
+
+# Option to output statistics with regard to:
+# (1) number of records
+# (2) subject per record
+# (3) counted incoming properties of nwbib records
+# (4) 100 most frequent nwbib subjects 
 
 def _print_stats(stats):
     print ("\n---Statistics---\n")
@@ -99,6 +112,9 @@ def _print_stats(stats):
         print("{}: {}".format(k, v))
     print("\n\n")
 
+# Set filter to specify the languages of the publications that should be taken into account
+# Currently englisch and german.
+
 def filter_language(record):
     lang_ids = []
     if record.get("language") is not None:
@@ -108,6 +124,10 @@ def filter_language(record):
             lang_id_list = "".join(lang_ids)
             if "http://id.loc.gov/vocabulary/iso639-2/ger" in lang_id_list or "http://id.loc.gov/vocabulary/iso639-2/eng" in lang_id_list:
                 return True
+
+# Describes the main process of the script
+# switches between two different optional modes: statiscitcs
+# and traning set creation specifying the vocabulary, training and validation set size.
 
 def main():
     parser = argparse.ArgumentParser()
@@ -137,6 +157,8 @@ def main():
     
     valid_records = []
     records_without_subjects = []
+
+# Process and separate records with and without subjects
 
     with open(NWBIB_FILE, encoding="utf-8") as input_file:
         for line in input_file:
@@ -176,6 +198,8 @@ def main():
     if args.stats:
         _print_stats(stats)
 
+    # Test data specification
+
     num_test_records = round(len(valid_records) * args.percentage_test_data)
     msg = "{} valid records extracted from NWBib file, {} ({}%) will be reserved for the test file." 
     print(msg.format(len(valid_records), num_test_records, args.percentage_test_data * 100))
@@ -209,6 +233,8 @@ def main():
             test_indexes.pop(0)
         else:
             training_records.append(valid_records[i])
+
+    # Write the three different sets (training, test, without nwbib subjects) in tsv/txt files
 
     with open(TARGET_TRAIN_FILE, "w", encoding="utf-8", newline='') as ttf:
         writer = csv.writer(ttf, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
