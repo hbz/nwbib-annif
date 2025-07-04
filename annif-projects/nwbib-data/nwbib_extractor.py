@@ -15,6 +15,13 @@ TARGET_NO_SUBJECTS_FILE = "nwbib_unindexed_titles.txt"
 
 SKOS_VOCAB_TERMS = None
 
+FILTER_FOR_RECORDS_WITH_THESE_LANGUAGES = [
+    "http://id.loc.gov/vocabulary/iso639-2/ger",
+    "http://id.loc.gov/vocabulary/iso639-2/eng"
+]
+ 
+FILTER_FOR_RECORDS_WITH_NO_LANGUAGE = True
+
 ARGS_HELP_STRINGS = {
     "stats": "Prints statistical information on all processed NWBib data",
     "vocabulary": ("Add a path to the NWBib SKOS vocabulary file "
@@ -105,14 +112,14 @@ def _print_stats(stats):
     print("\n\n")
 
 def filter_language(record):
-    lang_ids = []
-    if record.get("language") is not None:
-        for rec_lang in record.get("language"):
-            lang_id = rec_lang.get("id")
-            lang_ids.append(lang_id)
-            lang_id_list = "".join(lang_ids)
-            if "http://id.loc.gov/vocabulary/iso639-2/ger" in lang_id_list or "http://id.loc.gov/vocabulary/iso639-2/eng" in lang_id_list:
-                return True
+    languages = record.get("language")
+    if not languages:
+        return FILTER_FOR_RECORDS_WITH_NO_LANGUAGE
+    for rec_lang in languages:
+        lang_id = rec_lang.get("id")
+        if lang_id in FILTER_FOR_RECORDS_WITH_THESE_LANGUAGES:
+            return True
+    return False
 
 def main():
     parser = argparse.ArgumentParser()
