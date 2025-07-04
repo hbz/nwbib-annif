@@ -31,6 +31,8 @@ ARGS_HELP_STRINGS = {
                                  "at random.")
 }
 
+# Create smaller records for the training by defining a subset of only certain properties.
+
 def extract_data(record):
     ret = {
         'title': '',
@@ -40,34 +42,33 @@ def extract_data(record):
         'otherSubjects': [],
         'abstract': ''
     }
-    lang_ids = ["http://id.loc.gov/vocabulary/iso639-2/ger", "http://id.loc.gov/vocabulary/iso639-2/eng"]
-    if record.get("language") is not None:
-        for rec_lang in record.get("language"):
-            lang_id = rec_lang.get("id")
-            if lang_id in lang_ids:
-                ret["language"] = record.get('language', [])
-                ret['title'] = record.get('title', '')
-                if 'otherTitleInformation' in record:
-                    ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
-                if "abstract" in record:
-                    ret['abstract'] = "".join(record["abstract"])
-                subjects = record.get('subject', [])
-                for subject_dict in subjects:
-                    source_id = subject_dict.get("id", '')
-                    label = subject_dict.get("label", '')
-                    if source_id.startswith("https://nwbib.de/subjects"):
-                        if SKOS_VOCAB_TERMS is None:
-                            ret["subjects"].append((source_id, label))
-                        else:
-                            if source_id in SKOS_VOCAB_TERMS:
-                                ret["subjects"].append((source_id, label))
-                            else:
-                                msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
-                                print(msg.format(source_id, label))
-                    else:
-                        ret["otherSubjects"].append(label)
+    ret["language"] = record.get('language', [])
+    ret['title'] = record.get('title', '')
+    if 'otherTitleInformation' in record:
+        ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
+    if "abstract" in record:
+        ret['abstract'] = "".join(record["abstract"])
+    # Separate nwbib subjects from other subjects, other subjects are stored for training data
+    subjects = record.get('subject', [])
+    for subject_dict in subjects:
+        source_id = subject_dict.get("id", '')
+        label = subject_dict.get("label", '')
+        if source_id.startswith("https://nwbib.de/subjects"):
+            if SKOS_VOCAB_TERMS is None:
+                ret["subjects"].append((source_id, label))
+            else:
+                # Test if given skos_vocabs terms are correct
+                if source_id in SKOS_VOCAB_TERMS:
+                    ret["subjects"].append((source_id, label))
+                else:
+                    msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
+                    print(msg.format(source_id, label))
+        else:
+            ret["otherSubjects"].append(label)
 
     return ret
+
+# Create list of skos vocab terms of nwbib for testing invalid terms.
 
 def _extract_voc_terms(voc_file_path):
     global SKOS_VOCAB_TERMS
@@ -80,14 +81,22 @@ def _extract_voc_terms(voc_file_path):
                 term = "https://nwbib.de/subjects#" + match.group("term_id")
                 SKOS_VOCAB_TERMS.append(term)
 
+# Configure elements of records for text string as the trainings data basis
+
 def _prepare_tsv_data(record):
-    #combined_title = record["title"] if not record["otherTitleInformation"] else record["title"] + " - " + record["otherTitleInformation"]
+
     comb_title = {k: v for k, v in record.items() if v}
     del comb_title["subjects"], comb_title["language"]
     combined_title = ' '.join(str(v) for k, v in comb_title.items())
     subjects = ["<" + subject_tup[0] + ">" for subject_tup in record["subjects"]]
     line = [combined_title] + subjects
     return line
+
+# Option to output statistics with regard to:
+# (1) number of records
+# (2) subject per record
+# (3) counted incoming properties of nwbib records
+# (4) 100 most frequent nwbib subjects 
 
 def _print_stats(stats):
     print ("\n---Statistics---\n")
@@ -104,6 +113,9 @@ def _print_stats(stats):
         print("{}: {}".format(k, v))
     print("\n\n")
 
+# Set filter to specify the languages of the publications that should be taken into account
+# Currently englisch and german and filters out any records without language
+
 def filter_language(record):
     lang_ids = []
     if record.get("language") is not None:
@@ -113,6 +125,10 @@ def filter_language(record):
             lang_id_list = "".join(lang_ids)
             if "http://id.loc.gov/vocabulary/iso639-2/ger" in lang_id_list or "http://id.loc.gov/vocabulary/iso639-2/eng" in lang_id_list:
                 return True
+
+# Describes the main process of the script
+# switches between two different optional modes: statiscitcs
+# and traning set creation specifying the vocabulary, training and validation set size.
 
 def main():
     parser = argparse.ArgumentParser()
@@ -130,6 +146,7 @@ def main():
         print("ERROR: Test data percentage must be a value between 0.0 and 1.0!")
         sys.exit()
     
+    # If vocabulary is given, it creates a list with _extract_voc_terms for testing.
     if args.vocabulary:
         _extract_voc_terms(args.vocabulary)
 
@@ -143,7 +160,9 @@ def main():
     valid_records = []
     records_without_subjects = []
 
-    with open(NWBIB_FILE) as input_file:
+# Process and separate records with and without subjects
+
+    with open(NWBIB_FILE, encoding="utf-8") as input_file:
         for line in input_file:
             try:
                 json_dict = json.loads(line)
@@ -151,8 +170,8 @@ def main():
                 print("Could not read from file {}: {}".format(line, jsond))
                 continue
             data = extract_data(json_dict)
-            if data is not None:
-                if data["subjects"] and filter_language(data):
+            if data is not None and filter_language(data):
+                if data["subjects"]:
                     valid_records.append(data)
                 else:
                     records_without_subjects.append(data)
@@ -180,6 +199,8 @@ def main():
 
     if args.stats:
         _print_stats(stats)
+
+    # Test data specification
 
     num_test_records = round(len(valid_records) * args.percentage_test_data)
     msg = "{} valid records extracted from NWBib file, {} ({}%) will be reserved for the test file." 
@@ -215,18 +236,21 @@ def main():
         else:
             training_records.append(valid_records[i])
 
-    with open(TARGET_TRAIN_FILE, "w") as ttf:
+    # Write the three different sets (training, test, without nwbib subjects) in tsv/txt files
+
+    with open(TARGET_TRAIN_FILE, "w", encoding="utf-8", newline='') as ttf:
         writer = csv.writer(ttf, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for record in training_records:
             writer.writerow(_prepare_tsv_data(record))
-    with open(TARGET_TEST_FILE, "w") as ttf:
+    with open(TARGET_TEST_FILE, "w", encoding="utf-8", newline='') as ttf:
         writer = csv.writer(ttf, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for record in test_records:
             writer.writerow(_prepare_tsv_data(record))
-    with open(TARGET_NO_SUBJECTS_FILE, "w") as tnsf:
+    with open(TARGET_NO_SUBJECTS_FILE, "w", encoding="utf-8") as tnsf:
         for record in records_without_subjects:
             combined_title = record["title"] if not record["otherTitleInformation"] else record["title"] + " - " + record["otherTitleInformation"]
             tnsf.write(combined_title + "\n")
+
 
 if __name__ == '__main__':
     main()
