@@ -57,6 +57,7 @@ def extract_data(record):
             if SKOS_VOCAB_TERMS is None:
                 ret["subjects"].append((source_id, label))
             else:
+                # Test if given skos_vocabs terms are correct
                 if source_id in SKOS_VOCAB_TERMS:
                     ret["subjects"].append((source_id, label))
                 else:
@@ -67,7 +68,7 @@ def extract_data(record):
 
     return ret
 
-# TODO: Add documentation.
+# Create list of skos vocab terms of nwbib for testing invalid terms.
 
 def _extract_voc_terms(voc_file_path):
     global SKOS_VOCAB_TERMS
@@ -113,7 +114,7 @@ def _print_stats(stats):
     print("\n\n")
 
 # Set filter to specify the languages of the publications that should be taken into account
-# Currently englisch and german.
+# Currently englisch and german and filters out any records without language
 
 def filter_language(record):
     lang_ids = []
@@ -145,6 +146,7 @@ def main():
         print("ERROR: Test data percentage must be a value between 0.0 and 1.0!")
         sys.exit()
     
+    # If vocabulary is given, it creates a list with _extract_voc_terms for testing.
     if args.vocabulary:
         _extract_voc_terms(args.vocabulary)
 
