@@ -15,13 +15,6 @@ TARGET_NO_SUBJECTS_FILE = "nwbib_unindexed_titles.txt"
 
 SKOS_VOCAB_TERMS = None
 
-FILTER_FOR_RECORDS_WITH_THESE_LANGUAGES = [
-    "http://id.loc.gov/vocabulary/iso639-2/ger",
-    "http://id.loc.gov/vocabulary/iso639-2/eng"
-]
- 
-FILTER_FOR_RECORDS_WITH_NO_LANGUAGE = True
-
 ARGS_HELP_STRINGS = {
     "stats": "Prints statistical information on all processed NWBib data",
     "vocabulary": ("Add a path to the NWBib SKOS vocabulary file "
@@ -35,7 +28,10 @@ ARGS_HELP_STRINGS = {
                                  "data. If set, the test data will be extract continuously "
                                  "from this record on until the desired percentage of test "
                                  "data is reached. If not set, test data will be sampled "
-                                 "at random.")
+                                 "at random."),
+    "arg_filter_language": ("Allowed language(s) as ISO-639-2 codes, e.g: --filter-lang ger eng. "
+                        "Separate multiple values with spaces. Default: all (no filtering)"),
+    "arg_include_no_language": ("Whether data records without language specification are allowed (default: true)")
 }
 
 def extract_data(record):
@@ -47,33 +43,27 @@ def extract_data(record):
         'otherSubjects': [],
         'abstract': ''
     }
-    lang_ids = ["http://id.loc.gov/vocabulary/iso639-2/ger", "http://id.loc.gov/vocabulary/iso639-2/eng"]
-    if record.get("language") is not None:
-        for rec_lang in record.get("language"):
-            lang_id = rec_lang.get("id")
-            if lang_id in lang_ids:
-                ret["language"] = record.get('language', [])
-                ret['title'] = record.get('title', '')
-                if 'otherTitleInformation' in record:
-                    ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
-                if "abstract" in record:
-                    ret['abstract'] = "".join(record["abstract"])
-                subjects = record.get('subject', [])
-                for subject_dict in subjects:
-                    source_id = subject_dict.get("id", '')
-                    label = subject_dict.get("label", '')
-                    if source_id.startswith("https://nwbib.de/subjects"):
-                        if SKOS_VOCAB_TERMS is None:
-                            ret["subjects"].append((source_id, label))
-                        else:
-                            if source_id in SKOS_VOCAB_TERMS:
-                                ret["subjects"].append((source_id, label))
-                            else:
-                                msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
-                                print(msg.format(source_id, label))
-                    else:
-                        ret["otherSubjects"].append(label)
-
+    ret["language"] = record.get('language', [])
+    ret['title'] = record.get('title', '')
+    if 'otherTitleInformation' in record:
+        ret['otherTitleInformation'] = ', '.join(record['otherTitleInformation'])
+    if "abstract" in record:
+        ret['abstract'] = "".join(record["abstract"])
+    subjects = record.get('subject', [])
+    for subject_dict in subjects:
+        source_id = subject_dict.get("id", '')
+        label = subject_dict.get("label", '')
+        if source_id.startswith("https://nwbib.de/subjects"):
+            if SKOS_VOCAB_TERMS is None:
+                ret["subjects"].append((source_id, label))
+            else:
+                if source_id in SKOS_VOCAB_TERMS:
+                    ret["subjects"].append((source_id, label))
+                else:
+                    msg = 'Warning: Subject {} ({}) not found in provided SKOS vocabulary - skipping'
+                    print(msg.format(source_id, label))
+        else:
+            ret["otherSubjects"].append(label)
     return ret
 
 def _extract_voc_terms(voc_file_path):
@@ -90,7 +80,8 @@ def _extract_voc_terms(voc_file_path):
 def _prepare_tsv_data(record):
     #combined_title = record["title"] if not record["otherTitleInformation"] else record["title"] + " - " + record["otherTitleInformation"]
     comb_title = {k: v for k, v in record.items() if v}
-    del comb_title["subjects"], comb_title["language"]
+    for key in ("subjects", "language"):
+        comb_title.pop(key, None)
     combined_title = ' '.join(str(v) for k, v in comb_title.items())
     subjects = ["<" + subject_tup[0] + ">" for subject_tup in record["subjects"]]
     line = [combined_title] + subjects
@@ -111,15 +102,20 @@ def _print_stats(stats):
         print("{}: {}".format(k, v))
     print("\n\n")
 
-def filter_language(record):
+def filter_language(record, allowed_languages, include_no_lang):
+    if allowed_languages is None:
+        return True  # No filtering
     languages = record.get("language")
     if not languages:
-        return FILTER_FOR_RECORDS_WITH_NO_LANGUAGE
+        return include_no_lang
     for rec_lang in languages:
         lang_id = rec_lang.get("id")
-        if lang_id in FILTER_FOR_RECORDS_WITH_THESE_LANGUAGES:
+        if lang_id in allowed_languages:
             return True
     return False
+
+def iso639_to_uri(code: str) -> str:
+    return f"http://id.loc.gov/vocabulary/iso639-2/{code}"
 
 def main():
     parser = argparse.ArgumentParser()
@@ -131,6 +127,10 @@ def main():
                         help=ARGS_HELP_STRINGS["percentage_test_data"])
     parser.add_argument("-t", "--test_data_starting_index", type=int,
                         help=ARGS_HELP_STRINGS["test_data_starting_index"])
+    parser.add_argument("-f", "--filter-lang", nargs="+", default=["all"], 
+                        help=ARGS_HELP_STRINGS["arg_filter_language"])
+    parser.add_argument("-i", "--include-no-lang", choices=["true", "false"], default="true",
+                        help=ARGS_HELP_STRINGS["arg_include_no_language"])
     args = parser.parse_args()
     
     if args.percentage_test_data > 1.0 or args.percentage_test_data < 0.0:
@@ -139,6 +139,9 @@ def main():
     
     if args.vocabulary:
         _extract_voc_terms(args.vocabulary)
+     
+    allowed_languages = None if args.filter_lang == ["all"] else [iso639_to_uri(code) for code in args.filter_lang]
+    include_no_lang = args.include_no_lang == "true"
 
     stats = {
         "total_records": 0,
@@ -157,9 +160,11 @@ def main():
             except json.decoder.JSONDecodeError as jsond:
                 print("Could not read from file {}: {}".format(line, jsond))
                 continue
+            if not filter_language(json_dict, allowed_languages, include_no_lang):
+                continue
             data = extract_data(json_dict)
             if data is not None:
-                if data["subjects"] and filter_language(data):
+                if data["subjects"]:
                     valid_records.append(data)
                 else:
                     records_without_subjects.append(data)
