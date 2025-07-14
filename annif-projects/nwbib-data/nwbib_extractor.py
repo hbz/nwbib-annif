@@ -86,7 +86,7 @@ def _extract_voc_terms(voc_file_path):
 def _prepare_tsv_data(record):
 
     comb_title = {k: v for k, v in record.items() if v}
-    del comb_title["subjects"], comb_title["language"]
+    del comb_title["subjects"]#, comb_title["language"]
     combined_title = ' '.join(str(v) for k, v in comb_title.items())
     subjects = ["<" + subject_tup[0] + ">" for subject_tup in record["subjects"]]
     line = [combined_title] + subjects
@@ -116,15 +116,18 @@ def _print_stats(stats):
 # Set filter to specify the languages of the publications that should be taken into account
 # Currently englisch and german and filters out any records without language
 
-def filter_language(record):
-    lang_ids = []
-    if record.get("language") is not None:
-        for rec_lang in record.get("language"):
-            lang_id = rec_lang.get("id")
-            lang_ids.append(lang_id)
-            lang_id_list = "".join(lang_ids)
-            if "http://id.loc.gov/vocabulary/iso639-2/ger" in lang_id_list or "http://id.loc.gov/vocabulary/iso639-2/eng" in lang_id_list:
-                return True
+# def filter_language(record):
+#     lang_ids = []
+#     if record.get("language") is not None:
+#         for rec_lang in record.get("language"):
+#             lang_id = rec_lang.get("id")
+#             lang_ids.append(lang_id)
+#             lang_id_list = "".join(lang_ids)
+#             if "http://id.loc.gov/vocabulary/iso639-2/ger" in lang_id_list or "http://id.loc.gov/vocabulary/iso639-2/eng" in lang_id_list:
+#                 return True
+#         else:
+#             return True
+
 
 # Describes the main process of the script
 # switches between two different optional modes: statiscitcs
@@ -170,7 +173,7 @@ def main():
                 print("Could not read from file {}: {}".format(line, jsond))
                 continue
             data = extract_data(json_dict)
-            if data is not None and filter_language(data):
+            if data is not None: # and filter_language(data):
                 if data["subjects"]:
                     valid_records.append(data)
                 else:
