@@ -103,11 +103,16 @@ def _print_stats(stats):
     print("\n\n")
 
 def filter_language(record, allowed_languages, include_no_lang):
-    if allowed_languages is None:
-        return True  # No filtering
     languages = record.get("language")
+    # First check if language is given
+    # and wether to include records without language or not
     if not languages:
         return include_no_lang
+    # Then check which languages should be included
+    # all languages
+    if allowed_languages is None:
+        return True
+    # some languages
     for rec_lang in languages:
         lang_id = rec_lang.get("id")
         if lang_id in allowed_languages:
