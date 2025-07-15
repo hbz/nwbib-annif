@@ -97,8 +97,8 @@ def _print_stats(stats):
     for k, v in sorted(stats["record_keys_distribution"].items(), key=lambda x: x[1], reverse=True):
         print("{}: {}".format(k, v))
     print("\n4) Subject distribution (which subjects occur most often in all records? List is limited to the 100 most frequent subjects): \n")
-    subjects_dist = list(stats["subjects_distribution"].items())
-    for k, v in sorted(subjects_dist[:100], key=lambda x: x[1], reverse=True):
+    subjects_dist = sorted(stats["subjects_distribution"].items(), key=lambda x: x[1], reverse=True)
+    for k, v in subjects_dist[:100]:
         print("{}: {}".format(k, v))
     print("\n\n")
 
