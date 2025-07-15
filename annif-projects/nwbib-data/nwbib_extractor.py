@@ -29,9 +29,9 @@ ARGS_HELP_STRINGS = {
                                  "from this record on until the desired percentage of test "
                                  "data is reached. If not set, test data will be sampled "
                                  "at random."),
-    "arg_filter_language": ("Allowed language(s) as ISO-639-2 codes, e.g: --filter-lang ger eng. "
+    "arg_filter_language": ("Included language(s) as ISO-639-2 codes, e.g: --filter-lang ger eng. "
                         "Separate multiple values with spaces. Default: all (no filtering)"),
-    "arg_include_no_language": ("Whether data records without language specification are allowed (default: true)")
+    "arg_include_no_language": ("Whether data records without language specification are included. Default: true)")
 }
 
 def extract_data(record):
