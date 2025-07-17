@@ -1,0 +1,24 @@
+I have no name!@c4b17990b06a:/annif-projects$ annif eval nwbib-fasttext nwbib-data/nwbib_subjects_test.tsv
+Precision (doc avg):            0.1255
+Recall (doc avg):               0.8567
+F1 score (doc avg):             0.2122
+Precision (subj avg):           0.0765
+Recall (subj avg):              0.6592
+F1 score (subj avg):            0.1336
+Precision (weighted subj avg):  0.1530
+Recall (weighted subj avg):     0.8284
+F1 score (weighted subj avg):   0.2527
+Precision (microavg):           0.1190
+Recall (microavg):              0.8284
+F1 score (microavg):            0.2081
+F1@5:                           0.3280
+NDCG:                           0.7426
+NDCG@5:                         0.7218
+NDCG@10:                        0.7426
+Precision@1:                    0.6425
+Precision@3:                    0.3199
+Precision@5:                    0.2147
+True positives:                 53694
+False positives:                397640
+False negatives:                11119
+Documents evaluated:            47002

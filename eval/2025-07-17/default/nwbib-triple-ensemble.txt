@@ -1,0 +1,31 @@
+I have no name!@c4b17990b06a:/annif-projects$ annif eval nwbib-triple-ensemble nwbib-data/nwbib_subjects_test.tsv
+2025-07-17T12:06:45.705Z INFO  [omikuji::model] Loading model from data/projects/nwbib-omikuji/omikuji-model...
+2025-07-17T12:06:45.705Z INFO  [omikuji::model] Loading model settings from data/projects/nwbib-omikuji/omikuji-model/settings.json...
+2025-07-17T12:06:45.705Z INFO  [omikuji::model] Loaded model settings Settings { n_features: 344966, classifier_loss_type: Hinge }...
+2025-07-17T12:06:45.705Z INFO  [omikuji::model] Loading tree from data/projects/nwbib-omikuji/omikuji-model/tree2.cbor...
+2025-07-17T12:06:45.908Z INFO  [omikuji::model] Loading tree from data/projects/nwbib-omikuji/omikuji-model/tree0.cbor...
+2025-07-17T12:06:46.111Z INFO  [omikuji::model] Loading tree from data/projects/nwbib-omikuji/omikuji-model/tree1.cbor...
+2025-07-17T12:06:46.311Z INFO  [omikuji::model] Loaded model with 3 trees; it took 0.61s
+Precision (doc avg):            0.1240
+Recall (doc avg):               0.9174
+F1 score (doc avg):             0.2138
+Precision (subj avg):           0.1111
+Recall (subj avg):              0.7574
+F1 score (subj avg):            0.1791
+Precision (weighted subj avg):  0.2069
+Recall (weighted subj avg):     0.8989
+F1 score (weighted subj avg):   0.3216
+Precision (microavg):           0.1240
+Recall (microavg):              0.8989
+F1 score (microavg):            0.2179
+F1@5:                           0.3571
+NDCG:                           0.8120
+NDCG@5:                         0.7961
+NDCG@10:                        0.8120
+Precision@1:                    0.7117
+Precision@3:                    0.3572
+Precision@5:                    0.2333
+True positives:                 58260
+False positives:                411752
+False negatives:                6553
+Documents evaluated:            47002
