@@ -1,0 +1,30 @@
+2025-07-30T02:32:01.159Z INFO  [omikuji::model] Loading model from data/projects/ce-nwbib-omikuji/omikuji-model...
+2025-07-30T02:32:01.159Z INFO  [omikuji::model] Loading model settings from data/projects/ce-nwbib-omikuji/omikuji-model/settings.json...
+2025-07-30T02:32:01.160Z INFO  [omikuji::model] Loaded model settings Settings { n_features: 245481, classifier_loss_type: Hinge }...
+2025-07-30T02:32:01.160Z INFO  [omikuji::model] Loading tree from data/projects/ce-nwbib-omikuji/omikuji-model/tree1.cbor...
+2025-07-30T02:32:01.384Z INFO  [omikuji::model] Loading tree from data/projects/ce-nwbib-omikuji/omikuji-model/tree0.cbor...
+2025-07-30T02:32:01.617Z INFO  [omikuji::model] Loading tree from data/projects/ce-nwbib-omikuji/omikuji-model/tree2.cbor...
+2025-07-30T02:32:01.846Z INFO  [omikuji::model] Loaded model with 3 trees; it took 0.69s
+Precision (doc avg):          	0.2866
+Recall (doc avg):             	0.7599
+F1 score (doc avg):           	0.3677
+Precision (subj avg):         	0.1565
+Recall (subj avg):            	0.5245
+F1 score (subj avg):          	0.2298
+Precision (weighted subj avg):	0.2072
+Recall (weighted subj avg):   	0.7319
+F1 score (weighted subj avg): 	0.3161
+Precision (microavg):         	0.1766
+Recall (microavg):            	0.7319
+F1 score (microavg):          	0.2846
+F1@5:                         	0.4021
+NDCG:                         	0.6629
+NDCG@5:                       	0.6501
+NDCG@10:                      	0.6629
+Precision@1:                  	0.5718
+Precision@3:                  	0.3678
+Precision@5:                  	0.3150
+True positives:               	43124
+False positives:              	201032
+False negatives:              	15798
+Documents evaluated:          	43787
