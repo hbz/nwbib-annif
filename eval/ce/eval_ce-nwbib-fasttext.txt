@@ -1,0 +1,23 @@
+Precision (doc avg):          	0.1015
+Recall (doc avg):             	0.7384
+F1 score (doc avg):           	0.1738
+Precision (subj avg):         	0.0597
+Recall (subj avg):            	0.5090
+F1 score (subj avg):          	0.1050
+Precision (weighted subj avg):	0.1206
+Recall (weighted subj avg):   	0.7068
+F1 score (weighted subj avg): 	0.2028
+Precision (microavg):         	0.0974
+Recall (microavg):            	0.7068
+F1 score (microavg):          	0.1713
+F1@5:                         	0.2666
+NDCG:                         	0.6111
+NDCG@5:                       	0.5861
+NDCG@10:                      	0.6111
+Precision@1:                  	0.5015
+Precision@3:                  	0.2539
+Precision@5:                  	0.1725
+True positives:               	41647
+False positives:              	385747
+False negatives:              	17275
+Documents evaluated:          	43787
